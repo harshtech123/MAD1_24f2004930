@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% set active_page = "patients" %}
+
+{% block title %}{{ patient.full_name }} - Patient Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user text-primary"></i> {{ patient.full_name }}
+                    </h1>
+                    <p class="text-muted">Patient medical record and history</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('doctor.patients') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patient Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card"></i> Patient Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                             style="width: 80px; height: 80px; font-size: 2rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h5 class="mt-2 mb-0">{{ patient.full_name }}</h5>
+                        <small class="text-muted">Patient ID: #{{ patient.id }}</small>
+                    </div>
+
+                    <div class="patient-info">
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Age:</strong></div>
+                            <div class="col-8">
+                                {% if patient.date_of_birth %}
+                                {{ current_date.year - patient.date_of_birth.year }} years
+                                {% else %}
+                                Not specified
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Gender:</strong></div>
+                            <div class="col-8">{{ patient.gender.title() if patient.gender else 'Not specified' }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Blood Group:</strong></div>
+                            <div class="col-8">
+                                {% if patient.blood_group %}
+                                <span class="badge bg-danger">{{ patient.blood_group }}</span>
+                                {% else %}
+                                Not specified
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Email:</strong></div>
+                            <div class="col-8">{{ patient.email }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Phone:</strong></div>
+                            <div class="col-8">{{ patient.phone or 'Not provided' }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Address:</strong></div>
+                            <div class="col-8">{{ patient.address or 'Not provided' }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4"><strong>Emergency Contact:</strong></div>
+                            <div class="col-8">{{ patient.emergency_contact or 'Not provided' }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Medical Information -->
+                    <hr>
+                    <h6 class="fw-bold">Medical Information</h6>
+                    <div class="row mb-2">
+                        <div class="col-4"><strong>Allergies:</strong></div>
+                        <div class="col-8">
+                            {% if patient.allergies %}
+                            <span class="text-danger">{{ patient.allergies }}</span>
+                            {% else %}
+                            <span class="text-success">None known</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>Medical History:</strong></div>
+                        <div class="col-8">{{ patient.medical_history or 'No previous history recorded' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar"></i> Statistics with You
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ appointments|length }}</h4>
+                                <small class="text-muted">Appointments</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ treatments|length }}</h4>
+                            <small class="text-muted">Treatments</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h5 class="text-warning">{{ appointments|selectattr('status', 'equalto', 'booked')|list|length }}</h5>
+                                <small class="text-muted">Upcoming</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-info">{{ treatments|selectattr('follow_up_required', 'equalto', True)|list|length }}</h5>
+                            <small class="text-muted">Follow-ups</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical History Tab -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="patientTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                                <i class="fas fa-history"></i> Medical History
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="treatments-tab" data-bs-toggle="tab" data-bs-target="#treatments" type="button" role="tab">
+                                <i class="fas fa-notes-medical"></i> Treatment Records
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments" type="button" role="tab">
+                                <i class="fas fa-calendar-check"></i> Appointment History
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="patientTabContent">
+                        <!-- Medical History Tab -->
+                        <div class="tab-pane fade show active" id="history" role="tabpanel">
+                            <h6 class="fw-bold mb-3">Previous Diagnoses & Prescriptions</h6>
+                            {% if treatments %}
+                            <div class="timeline">
+                                {% for treatment in treatments|sort(attribute='treatment_date', reverse=True) %}
+                                <div class="timeline-item mb-4">
+                                    <div class="row">
+                                        <div class="col-2 text-center">
+                                            <div class="timeline-date">
+                                                <div class="badge bg-primary">
+                                                    {{ treatment.treatment_date.strftime('%b') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%b') }}
+                                                </div>
+                                                <div class="fw-bold">
+                                                    {{ treatment.treatment_date.strftime('%d') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%d') }}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    {{ treatment.treatment_date.strftime('%Y') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%Y') }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-10">
+                                            <div class="card border-start border-primary border-3">
+                                                <div class="card-body">
+                                                    <h6 class="card-title text-primary">
+                                                        <i class="fas fa-stethoscope"></i> {{ treatment.diagnosis or 'General Consultation' }}
+                                                    </h6>
+                                                    
+                                                    {% if treatment.prescription %}
+                                                    <div class="mb-2">
+                                                        <strong class="text-success">
+                                                            <i class="fas fa-prescription"></i> Prescription:
+                                                        </strong>
+                                                        <div class="bg-light p-2 rounded mt-1">
+                                                            {{ treatment.prescription }}
+                                                        </div>
+                                                    </div>
+                                                    {% endif %}
+
+                                                    {% if treatment.notes %}
+                                                    <div class="mb-2">
+                                                        <strong class="text-info">
+                                                            <i class="fas fa-sticky-note"></i> Notes:
+                                                        </strong>
+                                                        <div class="text-muted mt-1">{{ treatment.notes }}</div>
+                                                    </div>
+                                                    {% endif %}
+
+                                                    {% if treatment.follow_up_required %}
+                                                    <div class="alert alert-warning py-2 mb-2">
+                                                        <i class="fas fa-calendar-plus"></i> 
+                                                        Follow-up required
+                                                        {% if treatment.follow_up_date %}
+                                                        on {{ treatment.follow_up_date.strftime('%B %d, %Y') }}
+                                                        {% endif %}
+                                                    </div>
+                                                    {% endif %}
+
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock"></i> 
+                                                        {{ treatment.appointment.appointment_time.strftime('%I:%M %p') if treatment.appointment.appointment_time else 'Time not recorded' }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No treatment history</h5>
+                                <p class="text-muted">This patient has no previous treatment records with you.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Treatment Records Tab -->
+                        <div class="tab-pane fade" id="treatments" role="tabpanel">
+                            <h6 class="fw-bold mb-3">Detailed Treatment Records</h6>
+                            {% if treatments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Diagnosis</th>
+                                            <th>Prescription</th>
+                                            <th>Follow-up</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for treatment in treatments %}
+                                        <tr>
+                                            <td>{{ treatment.treatment_date.strftime('%b %d, %Y') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%b %d, %Y') }}</td>
+                                            <td><strong class="text-primary">{{ treatment.diagnosis or 'Not specified' }}</strong></td>
+                                            <td>
+                                                {% if treatment.prescription %}
+                                                <span class="text-success">
+                                                    {{ treatment.prescription[:30] }}{% if treatment.prescription|length > 30 %}...{% endif %}
+                                                </span>
+                                                {% else %}
+                                                <span class="text-muted">No prescription</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if treatment.follow_up_required %}
+                                                <span class="badge bg-warning">Required</span>
+                                                {% else %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#treatmentDetailModal{{ treatment.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-notes-medical fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No treatments recorded</h5>
+                                <p class="text-muted">Treatment records will appear here after completing appointments.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Appointment History Tab -->
+                        <div class="tab-pane fade" id="appointments" role="tabpanel">
+                            <h6 class="fw-bold mb-3">Appointment History</h6>
+                            {% if appointments %}
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Reason</th>
+                                            <th>Fee</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for appointment in appointments %}
+                                        <tr>
+                                            <td>{{ appointment.appointment_date.strftime('%B %d, %Y') }}</td>
+                                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Not set' }}</td>
+                                            <td>
+                                                {% if appointment.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                                {% elif appointment.status == 'booked' %}
+                                                <span class="badge bg-primary">Booked</span>
+                                                {% elif appointment.status == 'cancelled' %}
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ appointment.status.title() }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ appointment.reason or 'General consultation' }}</td>
+                                            <td class="text-success">₹{{ "%.2f"|format(appointment.consultation_fee or 0) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No appointments</h5>
+                                <p class="text-muted">This patient has no appointment history with you.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Treatment Detail Modals -->
+{% for treatment in treatments %}
+<div class="modal fade" id="treatmentDetailModal{{ treatment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Treatment Details - {{ treatment.treatment_date.strftime('%B %d, %Y') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%B %d, %Y') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Diagnosis</h6>
+                        <p>{{ treatment.diagnosis or 'No diagnosis recorded' }}</p>
+                        
+                        {% if treatment.notes %}
+                        <h6 class="fw-bold">Notes</h6>
+                        <p>{{ treatment.notes }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if treatment.prescription %}
+                        <h6 class="fw-bold">Prescription</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ treatment.prescription }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if treatment.follow_up_required %}
+                        <h6 class="fw-bold mt-3">Follow-up</h6>
+                        <div class="alert alert-warning">
+                            Follow-up required
+                            {% if treatment.follow_up_date %}
+                            on {{ treatment.follow_up_date.strftime('%B %d, %Y') }}
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<style>
+.timeline-item {
+    position: relative;
+}
+
+.timeline-date {
+    position: sticky;
+    top: 20px;
+}
+
+.patient-info .row {
+    align-items: center;
+}
+
+.card-header-tabs .nav-link {
+    color: #6c757d;
+}
+
+.card-header-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

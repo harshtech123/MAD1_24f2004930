@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Appointments - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-calendar-check text-primary"></i> Manage Appointments
+                    </h1>
+                    <p class="text-muted">View and manage all hospital appointments</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#appointmentStatsModal">
+                        <i class="fas fa-chart-bar"></i> View Statistics
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="">All Status</option>
+                                <option value="booked" {% if status_filter == 'booked' %}selected{% endif %}>Booked</option>
+                                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                <option value="no_show" {% if status_filter == 'no_show' %}selected{% endif %}>No Show</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-control" name="date" value="{{ date_filter or '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Doctor</label>
+                            <input type="text" class="form-control" name="doctor" 
+                                   placeholder="Doctor name..." value="{{ request.args.get('doctor', '') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Patient</label>
+                            <input type="text" class="form-control" name="patient" 
+                                   placeholder="Patient name..." value="{{ request.args.get('patient', '') }}">
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-search"></i> Filter
+                                </button>
+                                <a href="{{ url_for('admin.appointments') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </a>
+                                <button type="button" class="btn btn-outline-info" onclick="exportAppointments()">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> Appointments List 
+                        <span class="badge bg-primary">{{ appointments|length }} appointments</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Appointment ID</th>
+                                    <th>Date & Time</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Department</th>
+                                    <th>Status</th>
+                                    <th>Fee</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in appointments %}
+                                <tr class="{% if appointment.status == 'cancelled' %}table-secondary{% elif appointment.status == 'no_show' %}table-warning{% elif appointment.status == 'completed' %}table-success{% endif %}">
+                                    <td>
+                                        <strong>#{{ appointment.id }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ appointment.created_at.strftime('%b %d, %Y') if appointment.created_at else 'Unknown' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ appointment.appointment_date.strftime('%B %d, %Y') }}</strong>
+                                            <br>
+                                            <span class="badge bg-info">
+                                                {{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Time not set' }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ appointment.patient.full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-envelope"></i> {{ appointment.patient.email }}
+                                            </small>
+                                            {% if appointment.patient.phone %}
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-phone"></i> {{ appointment.patient.phone }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ appointment.doctor.full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ appointment.doctor.qualification or 'Doctor' }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ appointment.doctor.department.name }}</span>
+                                    </td>
+                                    <td>
+                                        {% if appointment.status == 'booked' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-calendar-check"></i> Booked
+                                        </span>
+                                        {% elif appointment.status == 'completed' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle"></i> Completed
+                                        </span>
+                                        {% elif appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times-circle"></i> Cancelled
+                                        </span>
+                                        {% elif appointment.status == 'no_show' %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-exclamation-triangle"></i> No Show
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ appointment.status.title() }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">₹{{ "%.2f"|format(appointment.doctor.consultation_fee) }}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-info" title="View Details" 
+                                                    data-bs-toggle="modal" data-bs-target="#appointmentModal{{ appointment.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            {% if appointment.status == 'booked' %}
+                                            <button class="btn btn-outline-success" title="Mark Complete"
+                                                    data-action="complete" data-id="{{ appointment.id }}">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" title="Mark No Show"
+                                                    data-action="no_show" data-id="{{ appointment.id }}">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" title="Cancel"
+                                                    data-action="cancel" data-id="{{ appointment.id }}">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination would go here -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <small class="text-muted">Showing {{ appointments|length }} appointments</small>
+                        </div>
+                        <div>
+                            <!-- Pagination buttons would go here -->
+                        </div>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No appointments found</h5>
+                        <p class="text-muted">Try adjusting your filters or check back later.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointment Detail Modals -->
+{% for appointment in appointments %}
+<div class="modal fade" id="appointmentModal{{ appointment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-check"></i> Appointment #{{ appointment.id }} Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Appointment Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') }}</li>
+                            <li><strong>Time:</strong> {{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Not set' }}</li>
+                            <li><strong>Status:</strong> 
+                                {% if appointment.status == 'booked' %}
+                                <span class="badge bg-primary">Booked</span>
+                                {% elif appointment.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                                {% elif appointment.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% elif appointment.status == 'no_show' %}
+                                <span class="badge bg-warning">No Show</span>
+                                {% endif %}
+                            </li>
+                            <li><strong>Consultation Fee:</strong> ₹{{ "%.2f"|format(appointment.doctor.consultation_fee) }}</li>
+                            <li><strong>Reason:</strong> {{ appointment.reason or 'Not specified' }}</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Patient Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Name:</strong> {{ appointment.patient.full_name }}</li>
+                            <li><strong>Email:</strong> {{ appointment.patient.email }}</li>
+                            <li><strong>Phone:</strong> {{ appointment.patient.phone or 'Not provided' }}</li>
+                            {% if appointment.patient.date_of_birth %}
+                            <li><strong>Age:</strong> {{ ((current_date - appointment.patient.date_of_birth).days // 365) }} years</li>
+                            {% endif %}
+                            {% if appointment.patient.blood_group %}
+                            <li><strong>Blood Group:</strong> {{ appointment.patient.blood_group }}</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Doctor Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Name:</strong> {{ appointment.doctor.full_name }}</li>
+                            <li><strong>Department:</strong> {{ appointment.doctor.department.name }}</li>
+                            <li><strong>Qualification:</strong> {{ appointment.doctor.qualification or 'Doctor' }}</li>
+                            <li><strong>Experience:</strong> {{ appointment.doctor.experience_years }} years</li>
+                            <li><strong>License:</strong> {{ appointment.doctor.license_number }}</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Booking Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Booked On:</strong> {{ appointment.created_at.strftime('%B %d, %Y at %I:%M %p') if appointment.created_at else 'Unknown' }}</li>
+                            <li><strong>Last Updated:</strong> {{ appointment.updated_at.strftime('%B %d, %Y at %I:%M %p') if appointment.updated_at else 'Never' }}</li>
+                        </ul>
+
+                        {% if appointment.notes %}
+                        <h6 class="fw-bold mt-3">Notes</h6>
+                        <div class="bg-light p-2 rounded">
+                            {{ appointment.notes }}
+                        </div>
+                        {% endif %}
+
+                        {% if appointment.status == 'completed' and appointment.treatments %}
+                        <h6 class="fw-bold mt-3">Treatments</h6>
+                        <ul class="list-unstyled">
+                            {% for treatment in appointment.treatments %}
+                            <li>• {{ treatment.treatment_name }} - ₹{{ "%.2f"|format(treatment.cost) }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                {% if appointment.status == 'booked' %}
+                <button class="btn btn-success" data-action="complete" data-id="{{ appointment.id }}">
+                    <i class="fas fa-check"></i> Mark Complete
+                </button>
+                <button class="btn btn-warning" data-action="no_show" data-id="{{ appointment.id }}">
+                    <i class="fas fa-exclamation-triangle"></i> No Show
+                </button>
+                <button class="btn btn-danger" data-action="cancel" data-id="{{ appointment.id }}">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Statistics Modal -->
+<div class="modal fade" id="appointmentStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar"></i> Appointment Statistics
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="bg-primary text-white p-3 rounded mb-3">
+                            <h4>{{ appointments|selectattr('status', 'equalto', 'booked')|list|length }}</h4>
+                            <small>Booked</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-success text-white p-3 rounded mb-3">
+                            <h4>{{ appointments|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+                            <small>Completed</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-danger text-white p-3 rounded mb-3">
+                            <h4>{{ appointments|selectattr('status', 'equalto', 'cancelled')|list|length }}</h4>
+                            <small>Cancelled</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="bg-warning text-white p-3 rounded mb-3">
+                            <h4>{{ appointments|selectattr('status', 'equalto', 'no_show')|list|length }}</h4>
+                            <small>No Show</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Total Revenue from Completed Appointments: 
+                            <span class="text-success">
+                                ₹{% set total_revenue = 0 %}
+                                {% for appointment in appointments %}
+                                    {% if appointment.status == 'completed' %}
+                                        {% set total_revenue = total_revenue + appointment.doctor.consultation_fee %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ "%.2f"|format(total_revenue) }}
+                            </span>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle status update buttons
+    document.querySelectorAll('[data-action]').forEach(button => {
+        button.addEventListener('click', function() {
+            const action = this.dataset.action;
+            const appointmentId = this.dataset.id;
+            let status;
+            
+            switch(action) {
+                case 'complete':
+                    status = 'completed';
+                    break;
+                case 'no_show':
+                    status = 'no_show';
+                    break;
+                case 'cancel':
+                    status = 'cancelled';
+                    break;
+            }
+            
+            updateAppointmentStatus(appointmentId, status);
+        });
+    });
+});
+
+function updateAppointmentStatus(appointmentId, status) {
+    if (confirm(`Are you sure you want to mark this appointment as ${status}?`)) {
+        // You would implement the AJAX call to update the appointment status
+        fetch(`/admin/appointment/${appointmentId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({status: status})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating appointment status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating appointment status');
+        });
+    }
+}
+
+function exportAppointments() {
+    // Implement appointment export functionality
+    const url = new URL(window.location);
+    url.pathname = '/admin/appointments/export';
+    window.open(url.toString(), '_blank');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Appointment - HMS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-calendar-plus text-primary me-2"></i>
+            Book New Appointment
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Dashboard
+                </a>
+                <a href="{{ url_for('patient.appointments') }}" class="btn btn-outline-info">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    My Appointments
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>Appointment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" id="bookingForm" action="{{ url_for('patient.book_appointment', doctor_id=doctor.id) }}">
+                        
+                        <!-- Step 1: Department Selection -->
+                        <div class="booking-step" id="step1">
+                            <h6 class="text-primary mb-3">
+                                <span class="badge bg-primary rounded-circle me-2">1</span>
+                                Select Department
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="department_id" class="form-label">Choose Department</label>
+                                    <select class="form-select form-select-lg" id="department_id" name="department_id" required>
+                                        <option value="">Select a department</option>
+                                        {% for department in departments %}
+                                        <option value="{{ department.id }}">
+                                            {{ department.name }}
+                                            {% if department.description %}- {{ department.description }}{% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Doctor Selection -->
+                        <div class="booking-step" id="step2" style="display: none;">
+                            <h6 class="text-primary mb-3">
+                                <span class="badge bg-primary rounded-circle me-2">2</span>
+                                Choose Doctor
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="doctor_id" class="form-label">Select Doctor</label>
+                                    <select class="form-select form-select-lg" id="doctor_id" name="doctor_id" required>
+                                        <option value="">Choose a doctor</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Doctor Information Card -->
+                            <div id="doctorInfo" class="card mb-3" style="display: none;">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <div class="doctor-avatar mx-auto">
+                                                <div class="avatar-circle">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-10">
+                                            <h5 id="doctorName" class="mb-1"></h5>
+                                            <p id="doctorSpecialization" class="text-muted mb-1"></p>
+                                            <p id="doctorQualification" class="small text-secondary mb-1"></p>
+                                            <p id="doctorExperience" class="small text-success mb-0"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Date and Time Selection -->
+                        <div class="booking-step" id="step3" style="display: none;">
+                            <h6 class="text-primary mb-3">
+                                <span class="badge bg-primary rounded-circle me-2">3</span>
+                                Select Date & Time
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="appointment_date" class="form-label">Preferred Date</label>
+                                    <input type="date" class="form-control form-control-lg" id="appointment_date" 
+                                           name="appointment_date" min="{{ today }}" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="appointment_time" class="form-label">Preferred Time</label>
+                                    <select class="form-select form-select-lg" id="appointment_time" name="appointment_time" disabled required>
+                                        <option value="">Select time slot</option>
+                                    </select>
+                                    <div class="form-text">Available time slots will appear after selecting date</div>
+                                </div>
+                            </div>
+
+                            <!-- Available Time Slots Display -->
+                            <div id="availableSlots" class="mb-3" style="display: none;">
+                                <label class="form-label">Available Time Slots</label>
+                                <div id="timeSlotsContainer" class="border rounded p-3 bg-light">
+                                    <div class="text-center">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <span class="ms-2">Loading available slots...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Appointment Details -->
+                        <div class="booking-step" id="step4" style="display: none;">
+                            <h6 class="text-primary mb-3">
+                                <span class="badge bg-primary rounded-circle me-2">4</span>
+                                Appointment Information
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="appointment_reason" class="form-label">Reason for Visit *</label>
+                                    <textarea class="form-control" id="appointment_reason" name="appointment_reason" 
+                                            rows="4" placeholder="Please describe your symptoms or reason for the appointment..." required></textarea>
+                                    <div class="form-text">Please provide details about your symptoms or the purpose of your visit.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="button" id="prevBtn" class="btn btn-outline-secondary" onclick="changeStep(-1)" style="display: none;">
+                                <i class="fas fa-arrow-left me-1"></i>Previous
+                            </button>
+                            <button type="button" id="nextBtn" class="btn btn-primary" onclick="changeStep(1)">
+                                Next<i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            <button type="submit" id="submitBtn" class="btn btn-success" style="display: none;">
+                                <i class="fas fa-calendar-check me-1"></i>Book Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Booking Progress -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>Booking Progress
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress-step" id="progress1">
+                        <div class="step-indicator active">
+                            <span class="step-number">1</span>
+                        </div>
+                        <span class="step-text">Department</span>
+                    </div>
+                    <div class="progress-step" id="progress2">
+                        <div class="step-indicator">
+                            <span class="step-number">2</span>
+                        </div>
+                        <span class="step-text">Doctor</span>
+                    </div>
+                    <div class="progress-step" id="progress3">
+                        <div class="step-indicator">
+                            <span class="step-number">3</span>
+                        </div>
+                        <span class="step-text">Date & Time</span>
+                    </div>
+                    <div class="progress-step" id="progress4">
+                        <div class="step-indicator">
+                            <span class="step-number">4</span>
+                        </div>
+                        <span class="step-text">Details</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Booking Guidelines
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="guideline-item">
+                        <i class="fas fa-clock text-primary"></i>
+                        <div>
+                            <strong>Timing:</strong> Arrive 15 minutes early
+                        </div>
+                    </div>
+                    <div class="guideline-item">
+                        <i class="fas fa-calendar-alt text-success"></i>
+                        <div>
+                            <strong>Advance Booking:</strong> Up to 30 days ahead
+                        </div>
+                    </div>
+                    <div class="guideline-item">
+                        <i class="fas fa-id-card text-info"></i>
+                        <div>
+                            <strong>Documents:</strong> Bring valid ID and insurance
+                        </div>
+                    </div>
+                    <div class="guideline-item">
+                        <i class="fas fa-phone text-warning"></i>
+                        <div>
+                            <strong>Emergency:</strong> Call 911 for urgent cases
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Appointments -->
+            {% if recent_appointments %}
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Appointments
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for appointment in recent_appointments %}
+                    <div class="recent-appointment">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>Dr. {{ appointment.doctor.full_name }}</strong>
+                                <div class="small text-muted">{{ appointment.appointment_date.strftime('%b %d, %Y') }}</div>
+                            </div>
+                            <span class="badge bg-{{ 'success' if appointment.status == 'completed' else 'primary' if appointment.status == 'confirmed' else 'warning' if appointment.status == 'pending' else 'danger' }}">
+                                {{ appointment.status.title() }}
+                            </span>
+                        </div>
+                    </div>
+                    {% if not loop.last %}<hr class="my-2">{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 30px;
+    height: 25px;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.progress-step.completed::after {
+    background: #28a745;
+}
+
+.step-indicator {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.step-indicator.active {
+    background: #007bff;
+    color: white;
+}
+
+.step-indicator.completed {
+    background: #28a745;
+    color: white;
+}
+
+.step-text {
+    font-weight: 500;
+}
+
+.guideline-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.guideline-item i {
+    width: 20px;
+    margin-right: 10px;
+}
+
+.recent-appointment {
+    margin-bottom: 10px;
+}
+
+#timeSlotsContainer .time-slot-btn {
+    transition: all 0.2s ease;
+    margin: 2px;
+}
+
+#timeSlotsContainer .time-slot-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+}
+
+.booking-step {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #f8f9fa;
+}
+</style>
+
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const departmentSelect = document.getElementById('department_id');
+    const doctorSelect = document.getElementById('doctor_id');
+    const doctorInfo = document.getElementById('doctorInfo');
+    const dateInput = document.getElementById('appointment_date');
+    const timeSelect = document.getElementById('appointment_time');
+    const availableSlotsDiv = document.getElementById('availableSlots');
+    const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+    
+    // Department change handler
+    departmentSelect.addEventListener('change', function() {
+        const departmentId = this.value;
+        
+        // Reset subsequent fields
+        doctorSelect.innerHTML = '<option value="">Choose a doctor</option>';
+        doctorInfo.style.display = 'none';
+        resetTimeSlots();
+        
+        if (departmentId) {
+            // Fetch doctors for selected department
+            fetch(`/patient/api/doctors/${departmentId}`)
+                .then(response => response.json())
+                .then(doctors => {
+                    doctors.forEach(doctor => {
+                        const option = document.createElement('option');
+                        option.value = doctor.id;
+                        option.textContent = `Dr. ${doctor.full_name} - ${doctor.specialization}`;
+                        option.dataset.doctorData = JSON.stringify(doctor);
+                        doctorSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching doctors:', error);
+                    showAlert('Error loading doctors. Please try again.', 'danger');
+                });
+        }
+    });
+    
+    // Doctor change handler
+    doctorSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value && selectedOption.dataset.doctorData) {
+            const doctor = JSON.parse(selectedOption.dataset.doctorData);
+            showDoctorInfo(doctor);
+        } else {
+            doctorInfo.style.display = 'none';
+        }
+    });
+    
+    // Date change handler
+    dateInput.addEventListener('change', function() {
+        if (doctorSelect.value && this.value) {
+            loadAvailableTimeSlots(doctorSelect.value, this.value);
+        }
+    });
+    
+    function showDoctorInfo(doctor) {
+        document.getElementById('doctorName').textContent = `Dr. ${doctor.full_name}`;
+        document.getElementById('doctorSpecialization').textContent = doctor.specialization;
+        document.getElementById('doctorQualification').textContent = doctor.qualification || 'Qualification information not available';
+        document.getElementById('doctorExperience').textContent = `Experience: ${doctor.experience_years || 'N/A'} years`;
+        doctorInfo.style.display = 'block';
+    }
+    
+    function loadAvailableTimeSlots(doctorId, selectedDate) {
+        timeSelect.innerHTML = '<option value="">Select time slot</option>';
+        timeSelect.disabled = true;
+        timeSlotsContainer.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading available slots...</div>';
+        availableSlotsDiv.style.display = 'block';
+        
+        fetch(`/patient/api/availability/${doctorId}/${selectedDate}`)
+            .then(response => response.json())
+            .then(availability => {
+                displayTimeSlots(availability);
+                timeSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error fetching availability:', error);
+                timeSlotsContainer.innerHTML = '<div class="alert alert-danger">Error loading time slots. Please try again.</div>';
+            });
+    }
+    
+    function displayTimeSlots(availability) {
+        if (availability.length === 0) {
+            timeSlotsContainer.innerHTML = '<div class="alert alert-info">No available slots for this date. Please select another date.</div>';
+            return;
+        }
+        
+        // Generate time slots
+        const timeSlots = [];
+        availability.forEach(slot => {
+            const startHour = parseInt(slot.start_time.split(':')[0]);
+            const startMinute = parseInt(slot.start_time.split(':')[1]);
+            const endHour = parseInt(slot.end_time.split(':')[0]);
+            const endMinute = parseInt(slot.end_time.split(':')[1]);
+            
+            let currentHour = startHour;
+            let currentMinute = startMinute;
+            
+            while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+                const timeString = currentHour.toString().padStart(2, '0') + ':' + currentMinute.toString().padStart(2, '0');
+                
+                const date = new Date();
+                date.setHours(currentHour, currentMinute, 0);
+                const displayTime = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                timeSlots.push({ value: timeString, display: displayTime });
+                
+                // Add 30 minutes
+                currentMinute += 30;
+                if (currentMinute >= 60) {
+                    currentMinute = 0;
+                    currentHour++;
+                }
+            }
+        });
+        
+        // Populate select options
+        timeSlots.forEach(slot => {
+            const option = document.createElement('option');
+            option.value = slot.value;
+            option.textContent = slot.display;
+            timeSelect.appendChild(option);
+        });
+        
+        // Create time slot buttons
+        let slotsHtml = '';
+        timeSlots.forEach((slot, index) => {
+            if (index % 3 === 0) {
+                if (index > 0) slotsHtml += '</div>';
+                slotsHtml += '<div class="row mb-2">';
+            }
+            
+            slotsHtml += '<div class="col-md-4">';
+            slotsHtml += '<button type="button" class="btn btn-outline-primary btn-sm w-100 time-slot-btn" data-time="' + slot.value + '">';
+            slotsHtml += slot.display;
+            slotsHtml += '</button>';
+            slotsHtml += '</div>';
+        });
+        if (timeSlots.length > 0) slotsHtml += '</div>';
+        
+        timeSlotsContainer.innerHTML = slotsHtml;
+        
+        // Add click handlers for time slot buttons
+        document.querySelectorAll('.time-slot-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const timeValue = this.getAttribute('data-time');
+                timeSelect.value = timeValue;
+                
+                // Update button styles
+                document.querySelectorAll('.time-slot-btn').forEach(b => {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+            });
+        });
+    }
+    
+    function resetTimeSlots() {
+        timeSelect.innerHTML = '<option value="">Select time slot</option>';
+        timeSelect.disabled = true;
+        availableSlotsDiv.style.display = 'none';
+        timeSlotsContainer.innerHTML = '';
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        const form = document.getElementById('bookingForm');
+        form.insertBefore(alertDiv, form.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Form submission handler
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        const requiredFields = [
+            'department_id', 'doctor_id', 'appointment_date', 
+            'appointment_time', 'appointment_reason'
+        ];
+        
+        let isValid = true;
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value.trim()) {
+                isValid = false;
+                element.classList.add('is-invalid');
+            } else {
+                element.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            showAlert('Please fill in all required fields.', 'danger');
+            return false;
+        }
+        
+        return confirm('Are you sure you want to book this appointment?');
+    });
+});
+
+function changeStep(direction) {
+    const newStep = currentStep + direction;
+    
+    if (newStep < 1 || newStep > totalSteps) return;
+    
+    // Validate current step before moving
+    if (direction === 1) {
+        let isValid = false;
+        
+        switch(currentStep) {
+            case 1:
+                isValid = document.getElementById('department_id').value !== '';
+                break;
+            case 2:
+                isValid = document.getElementById('doctor_id').value !== '';
+                break;
+            case 3:
+                isValid = document.getElementById('appointment_date').value !== '' && 
+                         document.getElementById('appointment_time').value !== '';
+                break;
+            case 4:
+                isValid = true; // Final step, no validation needed
+                break;
+        }
+        
+        if (!isValid) {
+            alert('Please complete the current step before proceeding.');
+            return;
+        }
+    }
+    
+    // Hide current step
+    document.getElementById(`step${currentStep}`).style.display = 'none';
+    
+    // Update current step
+    currentStep = newStep;
+    
+    // Show new step
+    document.getElementById(`step${currentStep}`).style.display = 'block';
+    
+    // Update navigation buttons
+    document.getElementById('prevBtn').style.display = currentStep > 1 ? 'block' : 'none';
+    document.getElementById('nextBtn').style.display = currentStep < totalSteps ? 'block' : 'none';
+    document.getElementById('submitBtn').style.display = currentStep === totalSteps ? 'block' : 'none';
+    
+    // Update progress indicators
+    updateStepProgress();
+}
+
+function updateStepProgress() {
+    // Update progress indicators
+    for (let i = 1; i <= totalSteps; i++) {
+        const indicator = document.querySelector(`#progress${i} .step-indicator`);
+        const step = document.querySelector(`#progress${i}`);
+        
+        if (i < currentStep) {
+            indicator.className = 'step-indicator completed';
+            step.classList.add('completed');
+        } else if (i === currentStep) {
+            indicator.className = 'step-indicator active';
+            step.classList.remove('completed');
+        } else {
+            indicator.className = 'step-indicator';
+            step.classList.remove('completed');
+        }
+    }
+}
+</script>
+{% endblock %}

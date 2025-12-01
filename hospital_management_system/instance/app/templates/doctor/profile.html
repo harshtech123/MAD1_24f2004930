@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+
+{% block title %}Doctor Profile - {{ current_user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-md text-primary"></i> My Profile
+                    </h1>
+                    <p class="text-muted">Manage your professional information and account settings</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 100px; height: 100px; font-size: 2.5rem;">
+                        <i class="fas fa-user-md"></i>
+                    </div>
+                    <h4>{{ current_user.full_name }}</h4>
+                    <p class="text-muted">{{ current_user.specialization }}</p>
+                    <p class="text-muted">{{ current_user.department.name if current_user.department else 'No Department' }}</p>
+                    
+                    <div class="row text-center mt-3">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <h5 class="text-primary">{{ current_user.experience_years }}</h5>
+                                <small class="text-muted">Years Experience</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <h5 class="text-success">₹{{ "%.0f"|format(current_user.consultation_fee) }}</h5>
+                                <small class="text-muted">Consultation Fee</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <h5 class="text-info">{{ current_user.license_number }}</h5>
+                            <small class="text-muted">License No.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-line"></i> Quick Statistics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% set total_appointments = current_user.appointments|length %}
+                    {% set completed_appointments = current_user.appointments|selectattr('status', 'equalto', 'completed')|list|length %}
+                    {% set pending_appointments = current_user.appointments|selectattr('status', 'in', ['pending', 'scheduled', 'confirmed'])|list|length %}
+                    
+                    <div class="row text-center">
+                        <div class="col-12 mb-3">
+                            <h4 class="text-primary">{{ total_appointments }}</h4>
+                            <small class="text-muted">Total Appointments</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h5 class="text-success">{{ completed_appointments }}</h5>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-warning">{{ pending_appointments }}</h5>
+                            <small class="text-muted">Pending</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Edit Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Edit Profile Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('doctor.profile') }}">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3">Basic Information</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="full_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ current_user.full_name }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ current_user.email }}" readonly>
+                                    <div class="form-text">Email cannot be changed. Contact admin if needed.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ current_user.phone or '' }}" placeholder="Enter phone number">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="license_number" class="form-label">License Number</label>
+                                    <input type="text" class="form-control" id="license_number" name="license_number" 
+                                           value="{{ current_user.license_number }}" readonly>
+                                    <div class="form-text">License number cannot be changed. Contact admin if needed.</div>
+                                </div>
+                            </div>
+
+                            <!-- Professional Information -->
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3">Professional Information</h6>
+
+                                <div class="mb-3">
+                                    <label for="qualification" class="form-label">Qualification</label>
+                                    <input type="text" class="form-control" id="qualification" name="qualification" 
+                                           value="{{ current_user.qualification or '' }}" 
+                                           placeholder="e.g., MBBS, MD, MS">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="specialization" class="form-label">Specialization *</label>
+                                    <input type="text" class="form-control" id="specialization" name="specialization" 
+                                           value="{{ current_user.specialization }}" required
+                                           placeholder="e.g., Cardiology, Neurology">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="experience_years" class="form-label">Years of Experience</label>
+                                    <input type="number" class="form-control" id="experience_years" name="experience_years" 
+                                           value="{{ current_user.experience_years }}" min="0" max="60">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="consultation_fee" class="form-label">Consultation Fee (₹)</label>
+                                    <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" 
+                                           value="{{ current_user.consultation_fee }}" min="0" step="50">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Info (Read-only) -->
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3">Department Information</h6>
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">Department</label>
+                                    <input type="text" class="form-control" id="department" 
+                                           value="{{ current_user.department.name if current_user.department else 'Not assigned' }}" readonly>
+                                    <div class="form-text">Department assignment is managed by administration.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold mb-3">Account Status</h6>
+                                <div class="mb-3">
+                                    <label for="status" class="form-label">Account Status</label>
+                                    <input type="text" class="form-control" id="status" 
+                                           value="{{ 'Active' if current_user.is_active else 'Inactive' }}" readonly>
+                                    <div class="form-text">Member since {{ current_user.created_at.strftime('%B %Y') }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Change Section -->
+                        <hr>
+                        <h6 class="fw-bold mb-3">Change Password</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" 
+                                           placeholder="Leave blank to keep current password">
+                                    <div class="form-text">Must be at least 8 characters long.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                           placeholder="Confirm your new password">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password confirmation validation
+    const newPassword = document.getElementById('new_password');
+    const confirmPassword = document.getElementById('confirm_password');
+    
+    function validatePasswords() {
+        if (newPassword.value && confirmPassword.value) {
+            if (newPassword.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+    
+    newPassword.addEventListener('input', validatePasswords);
+    confirmPassword.addEventListener('input', validatePasswords);
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const newPass = newPassword.value;
+        const confirmPass = confirmPassword.value;
+        
+        if (newPass && newPass.length < 8) {
+            e.preventDefault();
+            alert('Password must be at least 8 characters long');
+            return false;
+        }
+        
+        if (newPass && newPass !== confirmPass) {
+            e.preventDefault();
+            alert('Passwords do not match');
+            return false;
+        }
+        
+        return true;
+    });
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.btn-group .btn {
+    margin: 0 1px;
+}
+</style>
+{% endblock %}

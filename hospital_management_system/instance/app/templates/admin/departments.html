@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Departments - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-building text-primary"></i> Manage Departments
+                    </h1>
+                    <p class="text-muted">Add and manage hospital departments</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                        <i class="fas fa-plus"></i> Add New Department
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-building fa-2x mb-2"></i>
+                    <h5>{{ departments|length }}</h5>
+                    <p class="mb-0">Total Departments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h5>{{ departments|selectattr('is_active', 'equalto', True)|list|length }}</h5>
+                    <p class="mb-0">Active Departments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-md fa-2x mb-2"></i>
+                    <h5>{{ departments|map(attribute='doctors')|map('length')|sum }}</h5>
+                    <p class="mb-0">Total Doctors</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-times-circle fa-2x mb-2"></i>
+                    <h5>{{ departments|selectattr('is_active', 'equalto', False)|list|length }}</h5>
+                    <p class="mb-0">Inactive Departments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Departments List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> Departments List
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if departments %}
+                    <div class="row">
+                        {% for department in departments %}
+                        {% set active_doctors = department.doctors|selectattr('is_active', 'equalto', True)|list %}
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="card department-card h-100 {% if not department.is_active %}border-secondary{% endif %}">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building text-primary"></i> {{ department.name }}
+                                    </h6>
+                                    <div>
+                                        {% if department.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text text-muted">
+                                        {{ department.description or 'No description available' }}
+                                    </p>
+                                    
+                                    <!-- Department Statistics -->
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <div class="border-end">
+                                                <h5 class="text-primary mb-0">{{ active_doctors|length }}</h5>
+                                                <small class="text-muted">Doctors</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="border-end">
+                                                <h5 class="text-success mb-0">
+                                                    {{ department.doctors|map(attribute='appointments')|map('length')|sum }}
+                                                </h5>
+                                                <small class="text-muted">Appointments</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <h5 class="text-info mb-0">
+                                                {% set avg_fee = department.doctors|map(attribute='consultation_fee')|list %}
+                                                {% if avg_fee %}
+                                                ₹{{ "%.0f"|format(avg_fee|sum / avg_fee|length) }}
+                                                {% else %}
+                                                ₹0
+                                                {% endif %}
+                                            </h5>
+                                            <small class="text-muted">Avg Fee</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Doctors List -->
+                                    {% if active_doctors %}
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold mb-2">Active Doctors:</h6>
+                                        <div class="doctor-list">
+                                            {% for doctor in active_doctors %}
+                                            {% if loop.index <= 3 %}
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                     style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <small class="fw-bold">{{ doctor.full_name }}</small>
+                                                    <br>
+                                                    <small class="text-muted">{{ doctor.qualification or 'Doctor' }}</small>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                            {% if active_doctors|length > 3 %}
+                                            <small class="text-muted">
+                                                +{{ active_doctors|length - 3 }} more doctors
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-user-md fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted mb-0">No active doctors</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            Created: {{ department.created_at.strftime('%b %Y') if department.created_at else 'Unknown' }}
+                                        </small>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" title="Edit Department" 
+                                                    data-bs-toggle="modal" data-bs-target="#editDepartmentModal{{ department.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" title="View Details" 
+                                                    data-bs-toggle="modal" data-bs-target="#departmentModal{{ department.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-{% if department.is_active %}warning{% else %}success{% endif %}" 
+                                                    title="{% if department.is_active %}Deactivate{% else %}Activate{% endif %} Department"
+                                                    data-toggle-dept="{{ department.id }}" data-dept-name="{{ department.name }}" 
+                                                    data-dept-active="{{ department.is_active|lower }}">
+                                                <i class="fas fa-{% if department.is_active %}pause{% else %}play{% endif %}"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-building fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No departments found</h5>
+                        <p class="text-muted">Create your first department to get started.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDepartmentModal">
+                            <i class="fas fa-plus"></i> Add First Department
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Department Modal -->
+<div class="modal fade" id="addDepartmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus"></i> Add New Department
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.add_department') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add_name" class="form-label">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add_name" name="name" 
+                               placeholder="e.g., Cardiology, Pediatrics, Emergency" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="add_description" name="description" rows="3" 
+                                  placeholder="Brief description of the department's services and specialties"></textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="add_is_active" name="is_active" checked>
+                        <label class="form-check-label" for="add_is_active">
+                            Active Department
+                        </label>
+                        <div class="form-text">Department will be active and available for doctor assignments</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Create Department
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Department Detail Modals -->
+{% for department in departments %}
+{% set active_doctors_modal = department.doctors|selectattr('is_active', 'equalto', True)|list %}
+<div class="modal fade" id="departmentModal{{ department.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-building"></i> {{ department.name }} - Department Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Department Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Name:</strong> {{ department.name }}</li>
+                            <li><strong>Status:</strong> 
+                                {% if department.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </li>
+                            <li><strong>Created:</strong> {{ department.created_at.strftime('%B %d, %Y') if department.created_at else 'Unknown' }}</li>
+                            <li><strong>Last Updated:</strong> {{ department.updated_at.strftime('%B %d, %Y') if department.updated_at else 'Never' }}</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Description</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ department.description or 'No description provided' }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Statistics</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Total Doctors:</strong> {{ department.doctors|length }}</li>
+                            <li><strong>Active Doctors:</strong> {{ active_doctors_modal|length }}</li>
+                            <li><strong>Total Appointments:</strong> {{ department.doctors|map(attribute='appointments')|map('length')|sum }}</li>
+                            <li><strong>Average Consultation Fee:</strong> 
+                                {% set fees = department.doctors|map(attribute='consultation_fee')|list %}
+                                {% if fees %}
+                                ₹{{ "%.2f"|format(fees|sum / fees|length) }}
+                                {% else %}
+                                ₹0.00
+                                {% endif %}
+                            </li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Doctors List</h6>
+                        {% if department.doctors %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Experience</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doctor in department.doctors %}
+                                    <tr>
+                                        <td>{{ doctor.full_name }}</td>
+                                        <td>
+                                            {% if doctor.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ doctor.experience_years }} years</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No doctors assigned to this department yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editDepartmentModal{{ department.id }}" data-bs-dismiss="modal">
+                    <i class="fas fa-edit"></i> Edit Department
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Department Modal -->
+<div class="modal fade" id="editDepartmentModal{{ department.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i> Edit {{ department.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('admin.edit_department', department_id=department.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name{{ department.id }}" class="form-label">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_name{{ department.id }}" name="name" 
+                               value="{{ department.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description{{ department.id }}" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description{{ department.id }}" name="description" rows="3">{{ department.description or '' }}</textarea>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="edit_is_active{{ department.id }}" name="is_active" 
+                               {% if department.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="edit_is_active{{ department.id }}">
+                            Active Department
+                        </label>
+                        <div class="form-text">Deactivating will affect doctor assignments and availability</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Department
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle department status toggle buttons
+    document.querySelectorAll('[data-toggle-dept]').forEach(button => {
+        button.addEventListener('click', function() {
+            const departmentId = this.dataset.toggleDept;
+            const departmentName = this.dataset.deptName;
+            const isActive = this.dataset.deptActive === 'true';
+            
+            toggleDepartmentStatus(departmentId, departmentName, isActive);
+        });
+    });
+});
+
+function toggleDepartmentStatus(departmentId, departmentName, isActive) {
+    const action = isActive ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} the ${departmentName} department?`)) {
+        // You would implement the AJAX call to toggle department status
+        fetch(`/admin/department/${departmentId}/toggle_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating department status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating department status');
+        });
+    }
+}
+</script>
+
+<style>
+.department-card {
+    transition: all 0.3s ease;
+}
+
+.department-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.doctor-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}

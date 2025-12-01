@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+{% set active_page = "medical_records" %}
+
+{% block title %}Medical Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-file-medical text-primary"></i> Medical Records
+                    </h1>
+                    <p class="text-muted">View your complete medical history and treatment records</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print Records
+                    </button>
+                    <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Patient Information -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user"></i> Patient Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="avatar-lg mx-auto mb-3">
+                            <div class="avatar-initial bg-primary rounded-circle d-flex align-items-center justify-content-center">
+                                <span class="h3 text-white mb-0">{{ (patient.full_name or patient.name)[0].upper() }}</span>
+                            </div>
+                        </div>
+                        <h5 class="mb-1">{{ patient.full_name or patient.name }}</h5>
+                        <p class="text-muted mb-0">Patient ID: {{ patient.id }}</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Date of Birth:</strong><br>
+                            <small>{{ patient.date_of_birth.strftime('%B %d, %Y') if patient.date_of_birth else 'Not provided' }}</small>
+                        </li>
+                        {% if patient.date_of_birth %}
+                        <li class="mb-2">
+                            <strong>Age:</strong><br>
+                            <small>{{ current_date.year - patient.date_of_birth.year }} years old</small>
+                        </li>
+                        {% endif %}
+                        <li class="mb-2">
+                            <strong>Gender:</strong><br>
+                            <small>{{ patient.gender.title() if patient.gender else 'Not specified' }}</small>
+                        </li>
+                        {% if patient.blood_group %}
+                        <li class="mb-2">
+                            <strong>Blood Group:</strong><br>
+                            <span class="badge bg-danger">{{ patient.blood_group }}</span>
+                        </li>
+                        {% endif %}
+                        <li class="mb-2">
+                            <strong>Phone:</strong><br>
+                            <small>{{ patient.phone or 'Not provided' }}</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Email:</strong><br>
+                            <small>{{ patient.email or 'Not provided' }}</small>
+                        </li>
+                        {% if patient.emergency_contact %}
+                        <li class="mb-2">
+                            <strong>Emergency Contact:</strong><br>
+                            <small>{{ patient.emergency_contact }}</small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    {% if patient.allergies %}
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Allergies</h6>
+                        <p class="mb-0 small">{{ patient.allergies }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Medical History -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-notes-medical"></i> Treatment History
+                        {% if treatments %}
+                        <span class="badge bg-secondary">{{ treatments|length }} treatments</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if treatments %}
+                    <div class="timeline">
+                        {% for treatment in treatments %}
+                        <div class="timeline-item mb-4" id="treatment-{{ treatment.appointment_id }}">
+                            <div class="timeline-marker bg-primary">
+                                <i class="fas fa-notes-medical text-white"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="card border-start border-primary border-3">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <h6 class="text-primary mb-2">
+                                                    {{ treatment.treatment_date.strftime('%B %d, %Y') }}
+                                                    <small class="text-muted ms-2">{{ treatment.treatment_date.strftime('%I:%M %p') }}</small>
+                                                </h6>
+                                                <p class="text-muted mb-2">
+                                                    <strong>Dr. {{ treatment.appointment.doctor.full_name or treatment.appointment.doctor.name }}</strong>
+                                                    <br>
+                                                    <small>{{ treatment.appointment.doctor.specialization or 'General Practice' }}</small>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-4 text-end">
+                                                <button class="btn btn-outline-primary btn-sm view-treatment-btn"
+                                                        data-treatment-id="{{ treatment.id }}"
+                                                        data-treatment-date="{{ treatment.treatment_date.strftime('%B %d, %Y') }}"
+                                                        data-doctor-name="Dr. {{ treatment.appointment.doctor.full_name or treatment.appointment.doctor.name }}"
+                                                        data-doctor-specialization="{{ treatment.appointment.doctor.specialization or 'General Practice' }}"
+                                                        data-diagnosis="{{ treatment.diagnosis }}"
+                                                        data-prescription="{{ treatment.prescription or '' }}"
+                                                        data-notes="{{ treatment.notes or '' }}">
+                                                    <i class="fas fa-eye"></i> Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <h6 class="fw-bold text-dark">Diagnosis:</h6>
+                                            <p class="mb-2">{{ treatment.diagnosis }}</p>
+                                            
+                                            {% if treatment.prescription %}
+                                            <h6 class="fw-bold text-dark">Prescription:</h6>
+                                            <div class="bg-light p-2 rounded mb-2">
+                                                <pre class="mb-0 small">{{ treatment.prescription }}</pre>
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if treatment.notes %}
+                                            <h6 class="fw-bold text-dark">Notes:</h6>
+                                            <p class="mb-0 text-muted">{{ treatment.notes }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-notes-medical fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Treatment Records</h5>
+                        <p class="text-muted">You don't have any treatment records yet. Your medical history will appear here after completed appointments.</p>
+                        <a href="{{ url_for('patient.doctors') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Book an Appointment
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Treatment Details Modal -->
+<div class="modal fade" id="treatmentDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Treatment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="treatmentDetailsContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" onclick="printTreatment()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle view treatment details buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.view-treatment-btn')) {
+            const button = e.target.closest('.view-treatment-btn');
+            const treatmentData = {
+                id: button.getAttribute('data-treatment-id'),
+                date: button.getAttribute('data-treatment-date'),
+                doctorName: button.getAttribute('data-doctor-name'),
+                doctorSpecialization: button.getAttribute('data-doctor-specialization'),
+                diagnosis: button.getAttribute('data-diagnosis'),
+                prescription: button.getAttribute('data-prescription'),
+                notes: button.getAttribute('data-notes')
+            };
+            
+            showTreatmentDetails(treatmentData);
+        }
+    });
+});
+
+function showTreatmentDetails(data) {
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold text-primary">Treatment Information</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><strong>Date:</strong> ${data.date}</li>
+                    <li class="mb-2"><strong>Doctor:</strong> ${data.doctorName}</li>
+                    <li class="mb-2"><strong>Specialization:</strong> ${data.doctorSpecialization}</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold text-primary">Patient Information</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><strong>Patient:</strong> {{ patient.full_name or patient.name }}</li>
+                    <li class="mb-2"><strong>Patient ID:</strong> {{ patient.id }}</li>
+                </ul>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">Diagnosis:</h6>
+            <div class="bg-light p-3 rounded">
+                <p class="mb-0">${data.diagnosis}</p>
+            </div>
+        </div>
+        
+        ${data.prescription ? `
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">Prescription:</h6>
+            <div class="bg-light p-3 rounded">
+                <pre class="mb-0">${data.prescription}</pre>
+            </div>
+        </div>
+        ` : ''}
+        
+        ${data.notes ? `
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">Additional Notes:</h6>
+            <div class="bg-light p-3 rounded">
+                <p class="mb-0">${data.notes}</p>
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('treatmentDetailsContent').innerHTML = content;
+    
+    const modal = new bootstrap.Modal(document.getElementById('treatmentDetailsModal'));
+    modal.show();
+}
+
+function printTreatment() {
+    const modalContent = document.getElementById('treatmentDetailsContent').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Treatment Details - {{ patient.full_name or patient.name }}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .bg-light { background-color: #f8f9fa; padding: 15px; border-radius: 5px; }
+                pre { white-space: pre-wrap; font-family: inherit; }
+                hr { border: 1px solid #ccc; margin: 20px 0; }
+                .fw-bold { font-weight: bold; }
+                .text-primary { color: #0d6efd; }
+                .text-dark { color: #212529; }
+            </style>
+        </head>
+        <body>
+            <h2>Medical Treatment Record</h2>
+            ${modalContent}
+            <script>window.print(); window.close();<\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+</script>
+
+<style>
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+}
+
+.avatar-initial {
+    width: 100%;
+    height: 100%;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.timeline-content {
+    padding-left: 20px;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.border-start {
+    border-left-width: 3px !important;
+}
+
+pre {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+@media print {
+    .btn, .card-header .badge {
+        display: none;
+    }
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+}
+</style>
+
+{% endblock %} 

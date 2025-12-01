@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% set active_page = "availability" %}
+
+{% block title %}Manage Availability - {{ current_user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-clock text-primary"></i> Manage Availability
+                    </h1>
+                    <p class="text-muted">Set your available time slots for appointments</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Availability Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plus"></i> Add New Availability Slot
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('doctor.add_availability') }}">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="available_date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="available_date" name="available_date" 
+                                       min="{{ current_date }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="start_time" class="form-label">Start Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="end_time" class="form-label">End Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary d-block w-100">
+                                    <i class="fas fa-plus"></i> Add Slot
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Availability -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar"></i> Current Availability 
+                        <span class="badge bg-primary">{{ availability|length }} slots</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if availability %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Time Slot</th>
+                                    <th>Duration</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for slot in availability %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ slot.available_date.strftime('%B %d, %Y') }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ slot.available_date.strftime('%A') }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-primary">
+                                            <i class="fas fa-clock"></i> 
+                                            {{ slot.start_time.strftime('%I:%M %p') }} - {{ slot.end_time.strftime('%I:%M %p') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set duration = ((slot.end_time.hour * 60 + slot.end_time.minute) - (slot.start_time.hour * 60 + slot.start_time.minute)) %}
+                                        <span class="badge bg-info">{{ duration }} minutes</span>
+                                    </td>
+                                    <td>
+                                        {% if slot.is_booked %}
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-user"></i> Booked
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Available
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if not slot.is_booked %}
+                                            <form method="POST" action="{{ url_for('doctor.delete_availability', availability_id=slot.id) }}" 
+                                                  style="display: inline;" 
+                                                  onsubmit="return confirm('Are you sure you want to delete this availability slot?')">
+                                                <button type="submit" class="btn btn-outline-danger" title="Delete Slot">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            {% else %}
+                                            <button class="btn btn-outline-secondary" disabled title="Cannot delete booked slot">
+                                                <i class="fas fa-lock"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No availability slots set</h5>
+                        <p class="text-muted">Add your first availability slot using the form above.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="fw-bold">Quick Actions</h6>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary btn-sm" onclick="addWeekdaySlots()">
+                            <i class="fas fa-calendar-week"></i> Add Weekday Slots
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="addWeekendSlots()">
+                            <i class="fas fa-calendar-day"></i> Add Weekend Slots
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="copyPreviousWeek()">
+                            <i class="fas fa-copy"></i> Copy Previous Week
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addWeekdaySlots() {
+    // Pre-fill form with common weekday hours (9 AM - 5 PM)
+    document.getElementById('start_time').value = '09:00';
+    document.getElementById('end_time').value = '17:00';
+    
+    // Set date to next Monday
+    const today = new Date();
+    const nextMonday = new Date(today);
+    nextMonday.setDate(today.getDate() + (1 + 7 - today.getDay()) % 7);
+    document.getElementById('available_date').value = nextMonday.toISOString().split('T')[0];
+    
+    // Focus on the date field
+    document.getElementById('available_date').focus();
+}
+
+function addWeekendSlots() {
+    // Pre-fill form with weekend hours (10 AM - 2 PM)
+    document.getElementById('start_time').value = '10:00';
+    document.getElementById('end_time').value = '14:00';
+    
+    // Set date to next Saturday
+    const today = new Date();
+    const nextSaturday = new Date(today);
+    nextSaturday.setDate(today.getDate() + (6 - today.getDay()) % 7);
+    document.getElementById('available_date').value = nextSaturday.toISOString().split('T')[0];
+    
+    // Focus on the date field
+    document.getElementById('available_date').focus();
+}
+
+function copyPreviousWeek() {
+    alert('This feature will copy your availability from the previous week. Coming soon!');
+}
+
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
+    
+    form.addEventListener('submit', function(e) {
+        if (startTime.value && endTime.value && startTime.value >= endTime.value) {
+            e.preventDefault();
+            alert('End time must be after start time.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

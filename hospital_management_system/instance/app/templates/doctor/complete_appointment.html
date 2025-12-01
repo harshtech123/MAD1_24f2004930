@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% set active_page = "appointments" %}
+
+{% block title %}Complete Appointment - {{ appointment.patient.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-check-circle text-success"></i> Complete Appointment
+                    </h1>
+                    <p class="text-muted">Add treatment details for {{ appointment.patient.full_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('doctor.appointments') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Appointment Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check"></i> Appointment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Patient Information</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Name:</strong> {{ appointment.patient.full_name }}</li>
+                                <li><strong>Age:</strong> 
+                                    {% if appointment.patient.date_of_birth %}
+                                    {{ current_date.year - appointment.patient.date_of_birth.year }} years
+                                    {% else %}
+                                    Not specified
+                                    {% endif %}
+                                </li>
+                                <li><strong>Gender:</strong> {{ appointment.patient.gender.title() if appointment.patient.gender else 'Not specified' }}</li>
+                                {% if appointment.patient.blood_group %}
+                                <li><strong>Blood Group:</strong> <span class="badge bg-danger">{{ appointment.patient.blood_group }}</span></li>
+                                {% endif %}
+                                {% if appointment.patient.allergies %}
+                                <li><strong>Allergies:</strong> <span class="text-danger">{{ appointment.patient.allergies }}</span></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Appointment Information</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') }}</li>
+                                <li><strong>Time:</strong> {{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Not set' }}</li>
+                                <li><strong>Reason:</strong> {{ appointment.reason or 'General consultation' }}</li>
+                                <li><strong>Fee:</strong> ₹{{ "%.2f"|format(appointment.consultation_fee or current_user.consultation_fee) }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Treatment Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-notes-medical"></i> Treatment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Diagnosis -->
+                        <div class="mb-4">
+                            <label for="diagnosis" class="form-label">Diagnosis <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="diagnosis" name="diagnosis" rows="3" 
+                                      placeholder="Enter primary diagnosis and any additional conditions..." required></textarea>
+                            <div class="form-text">Provide a clear and concise diagnosis</div>
+                        </div>
+
+                        <!-- Prescription -->
+                        <div class="mb-4">
+                            <label for="prescription" class="form-label">Prescription</label>
+                            <textarea class="form-control" id="prescription" name="prescription" rows="4" 
+                                      placeholder="List medications, dosage, and instructions...&#10;e.g., Paracetamol 500mg - 1 tablet twice daily for 3 days&#10;Rest and adequate hydration"></textarea>
+                            <div class="form-text">Include medication names, dosages, frequency, and duration</div>
+                        </div>
+
+                        <!-- Additional Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="Any additional observations, recommendations, or instructions..."></textarea>
+                            <div class="form-text">Patient observations, lifestyle recommendations, etc.</div>
+                        </div>
+
+                        <!-- Follow-up Section -->
+                        <div class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Follow-up Requirements</h6>
+                                    
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="follow_up_required" name="follow_up_required">
+                                        <label class="form-check-label" for="follow_up_required">
+                                            <strong>Follow-up appointment required</strong>
+                                        </label>
+                                    </div>
+
+                                    <div id="follow_up_details" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="follow_up_date" class="form-label">Follow-up Date</label>
+                                                <input type="date" class="form-control" id="follow_up_date" name="follow_up_date" 
+                                                       min="{{ current_date }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Recommended Timeline</label>
+                                                <div class="btn-group d-flex" role="group">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setFollowUpDate(7)">1 Week</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setFollowUpDate(14)">2 Weeks</button>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="setFollowUpDate(30)">1 Month</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{{ url_for('doctor.appointments') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Complete Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const followUpCheckbox = document.getElementById('follow_up_required');
+    const followUpDetails = document.getElementById('follow_up_details');
+    
+    followUpCheckbox.addEventListener('change', function() {
+        followUpDetails.style.display = this.checked ? 'block' : 'none';
+    });
+});
+
+function setFollowUpDate(days) {
+    const today = new Date();
+    const followUpDate = new Date(today);
+    followUpDate.setDate(today.getDate() + days);
+    
+    const dateString = followUpDate.toISOString().split('T')[0];
+    document.getElementById('follow_up_date').value = dateString;
+    
+    // Check the follow-up checkbox
+    document.getElementById('follow_up_required').checked = true;
+    document.getElementById('follow_up_details').style.display = 'block';
+}
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const diagnosis = document.getElementById('diagnosis').value.trim();
+    
+    if (!diagnosis) {
+        e.preventDefault();
+        alert('Please provide a diagnosis before completing the appointment.');
+        document.getElementById('diagnosis').focus();
+        return false;
+    }
+    
+    const followUpRequired = document.getElementById('follow_up_required').checked;
+    const followUpDate = document.getElementById('follow_up_date').value;
+    
+    if (followUpRequired && !followUpDate) {
+        e.preventDefault();
+        alert('Please select a follow-up date or uncheck the follow-up requirement.');
+        document.getElementById('follow_up_date').focus();
+        return false;
+    }
+    
+    return confirm('Are you sure you want to complete this appointment? This action cannot be undone.');
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+textarea.form-control {
+    resize: vertical;
+}
+</style>
+{% endblock %}

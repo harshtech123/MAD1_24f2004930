@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% set active_page = "appointments" %}
+
+{% block title %}Reschedule Appointment{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-calendar-alt text-warning"></i> Reschedule Appointment
+                    </h1>
+                    <p class="text-muted">Change your appointment date and time</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('patient.appointments') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Current Appointment Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Current Appointment Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Doctor Information</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Doctor:</strong> Dr. {{ appointment.doctor.full_name or appointment.doctor.name }}</li>
+                                <li><strong>Specialization:</strong> {{ appointment.doctor.specialization or 'General Practice' }}</li>
+                                <li><strong>Department:</strong> {{ appointment.doctor.department.name if appointment.doctor.department else 'General' }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold">Current Schedule</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Date:</strong> {{ appointment.appointment_date.strftime('%B %d, %Y') }}</li>
+                                <li><strong>Time:</strong> {{ appointment.appointment_time.strftime('%I:%M %p') if appointment.appointment_time else 'Not set' }}</li>
+                                <li><strong>Reason:</strong> {{ appointment.reason or 'General consultation' }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reschedule Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check"></i> Select New Date & Time
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="appointment_date" class="form-label">New Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="appointment_date" name="appointment_date" 
+                                           min="{{ current_date.strftime('%Y-%m-%d') }}" required>
+                                    <div class="form-text">Select a new date for your appointment</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="appointment_time" class="form-label">New Time <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="appointment_time" name="appointment_time" required>
+                                        <option value="">Select a time</option>
+                                        <!-- Time options will be populated by JavaScript -->
+                                    </select>
+                                    <div class="form-text">Available time slots will appear after selecting a date</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Available Time Slots -->
+                        <div id="availableSlots" class="mb-4" style="display: none;">
+                            <h6 class="fw-bold text-primary">Available Time Slots</h6>
+                            <div class="row" id="timeSlotsContainer">
+                                <!-- Time slots will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Doctor's Availability Preview -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary">Doctor's Availability This Week</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Available Times</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for slot in availability %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ slot.available_date.strftime('%a, %b %d') }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success me-1">
+                                                    {{ slot.start_time.strftime('%I:%M %p') }} - {{ slot.end_time.strftime('%I:%M %p') }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        
+                                        {% if not availability %}
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                No availability information available for the next 7 days.
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Warning Notice -->
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Important:</strong> 
+                            <ul class="mb-0">
+                                <li>Your current appointment will be cancelled and replaced with the new one</li>
+                                <li>Please ensure the doctor is available at your selected time</li>
+                                <li>Rescheduling is only allowed for future appointments</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{{ url_for('patient.appointments') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-calendar-alt"></i> Reschedule Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<div id="availability-data" style="display: none;">
+    {% for slot in availability %}
+    <span data-date="{{ slot.available_date.strftime('%Y-%m-%d') }}" 
+          data-start="{{ slot.start_time.strftime('%H:%M') }}" 
+          data-end="{{ slot.end_time.strftime('%H:%M') }}"></span>
+    {% endfor %}
+</div>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('appointment_date');
+    const timeSelect = document.getElementById('appointment_time');
+    const availableSlotsDiv = document.getElementById('availableSlots');
+    const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+    
+    // Parse doctor's availability data from hidden HTML elements
+    const doctorAvailability = [];
+    const availabilitySpans = document.querySelectorAll('#availability-data span');
+    availabilitySpans.forEach(span => {
+        doctorAvailability.push({
+            available_date: span.getAttribute('data-date'),
+            start_time: span.getAttribute('data-start'),
+            end_time: span.getAttribute('data-end')
+        });
+    });
+    
+    dateInput.addEventListener('change', function() {
+        const selectedDate = this.value;
+        updateAvailableTimeSlots(selectedDate);
+    });
+    
+    function updateAvailableTimeSlots(selectedDate) {
+        // Clear existing options
+        timeSelect.innerHTML = '<option value="">Select a time</option>';
+        timeSlotsContainer.innerHTML = '';
+        
+        if (!selectedDate) {
+            availableSlotsDiv.style.display = 'none';
+            return;
+        }
+        
+        // Find availability for the selected date
+        const dateAvailability = doctorAvailability.filter(slot => {
+            return slot.available_date === selectedDate;
+        });
+        
+        if (dateAvailability.length === 0) {
+            availableSlotsDiv.style.display = 'block';
+            timeSlotsContainer.innerHTML = '<div class="col-12"><div class="alert alert-info">No availability for this date. Please select another date.</div></div>';
+            return;
+        }
+        
+        // Generate time slots
+        const timeSlots = [];
+        dateAvailability.forEach(slot => {
+            const startHour = parseInt(slot.start_time.split(':')[0]);
+            const startMinute = parseInt(slot.start_time.split(':')[1]);
+            const endHour = parseInt(slot.end_time.split(':')[0]);
+            const endMinute = parseInt(slot.end_time.split(':')[1]);
+            
+            let currentHour = startHour;
+            let currentMinute = startMinute;
+            
+            while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
+                const timeString = currentHour.toString().padStart(2, '0') + ':' + currentMinute.toString().padStart(2, '0');
+                
+                const date = new Date();
+                date.setHours(currentHour, currentMinute, 0);
+                const displayTime = date.toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                timeSlots.push({ value: timeString, display: displayTime });
+                
+                // Add 30 minutes
+                currentMinute += 30;
+                if (currentMinute >= 60) {
+                    currentMinute = 0;
+                    currentHour++;
+                }
+            }
+        });
+        
+        // Populate select options
+        timeSlots.forEach(slot => {
+            const option = document.createElement('option');
+            option.value = slot.value;
+            option.textContent = slot.display;
+            timeSelect.appendChild(option);
+        });
+        
+        // Show available slots
+        availableSlotsDiv.style.display = 'block';
+        
+        // Create time slot buttons
+        let slotsHtml = '';
+        timeSlots.forEach((slot, index) => {
+            if (index % 3 === 0) {
+                if (index > 0) slotsHtml += '</div>';
+                slotsHtml += '<div class="row mb-2">';
+            }
+            
+            slotsHtml += '<div class="col-md-4">';
+            slotsHtml += '<button type="button" class="btn btn-outline-primary btn-sm w-100 time-slot-btn" data-time="' + slot.value + '">';
+            slotsHtml += slot.display;
+            slotsHtml += '</button>';
+            slotsHtml += '</div>';
+        });
+        slotsHtml += '</div>';
+        
+        timeSlotsContainer.innerHTML = slotsHtml;
+        
+        // Add click handlers for time slot buttons
+        document.querySelectorAll('.time-slot-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const timeValue = this.getAttribute('data-time');
+                timeSelect.value = timeValue;
+                
+                // Update button styles
+                document.querySelectorAll('.time-slot-btn').forEach(b => {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+            });
+        });
+    }
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const selectedDate = dateInput.value;
+        const selectedTime = timeSelect.value;
+        
+        if (!selectedDate || !selectedTime) {
+            e.preventDefault();
+            alert('Please select both date and time for your appointment.');
+            return false;
+        }
+        
+        return confirm('Are you sure you want to reschedule your appointment? Your current appointment will be cancelled.');
+    });
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.time-slot-btn {
+    margin-bottom: 0.5rem;
+}
+
+.time-slot-btn.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+{% set active_page = "treatments" %}
+
+{% block title %}Treatment Records - {{ current_user.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-notes-medical text-primary"></i> Treatment Records
+                    </h1>
+                    <p class="text-muted">View and manage patient treatment history</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('doctor.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Date Range</label>
+                            <input type="date" class="form-control" name="start_date" 
+                                   value="{{ request.args.get('start_date', '') }}" placeholder="Start Date">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">To</label>
+                            <input type="date" class="form-control" name="end_date" 
+                                   value="{{ request.args.get('end_date', '') }}" placeholder="End Date">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Patient Search</label>
+                            <input type="text" class="form-control" name="patient_search" 
+                                   value="{{ request.args.get('patient_search', '') }}" 
+                                   placeholder="Search by patient name">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <a href="{{ url_for('doctor.treatments') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Treatment Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-notes-medical fa-2x mb-2"></i>
+                    <h5>{{ treatments|length }}</h5>
+                    <p class="mb-0">Total Treatments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-check fa-2x mb-2"></i>
+                    <h5>{{ treatments|map(attribute='appointment.patient_id')|unique|list|length }}</h5>
+                    <p class="mb-0">Patients Treated</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                    <h5>{{ treatments|selectattr('follow_up_required', 'equalto', True)|list|length }}</h5>
+                    <p class="mb-0">Follow-ups Required</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-prescription-bottle-alt fa-2x mb-2"></i>
+                    <h5>{{ treatments|selectattr('prescription')|list|length }}</h5>
+                    <p class="mb-0">Prescriptions Given</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Treatments Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> Treatment History
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if treatments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Diagnosis</th>
+                                    <th>Prescription</th>
+                                    <th>Follow-up</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for treatment in treatments %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ treatment.treatment_date.strftime('%b %d, %Y') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%b %d, %Y') }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ treatment.appointment.appointment_time.strftime('%I:%M %p') if treatment.appointment.appointment_time else 'Time not set' }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ treatment.appointment.patient.full_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                {% if treatment.appointment.patient.date_of_birth %}
+                                                Age: {{ current_date.year - treatment.appointment.patient.date_of_birth.year }} years
+                                                {% endif %}
+                                                {% if treatment.appointment.patient.gender %}
+                                                | {{ treatment.appointment.patient.gender.title() }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong class="text-primary">{{ treatment.diagnosis or 'Not specified' }}</strong>
+                                            {% if treatment.notes %}
+                                            <br>
+                                            <small class="text-muted">{{ treatment.notes[:50] }}{% if treatment.notes|length > 50 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if treatment.prescription %}
+                                        <div class="text-success">
+                                            <i class="fas fa-prescription"></i>
+                                            {{ treatment.prescription[:40] }}{% if treatment.prescription|length > 40 %}...{% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">No prescription</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if treatment.follow_up_required %}
+                                        <div>
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-calendar-plus"></i> Required
+                                            </span>
+                                            {% if treatment.follow_up_date %}
+                                            <br>
+                                            <small class="text-muted">{{ treatment.follow_up_date.strftime('%b %d, %Y') }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="badge bg-success">Completed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-info" title="View Details" 
+                                                    data-bs-toggle="modal" data-bs-target="#treatmentModal{{ treatment.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{{ url_for('doctor.patient_details', patient_id=treatment.appointment.patient_id) }}" 
+                                               class="btn btn-outline-primary" title="View Patient">
+                                                <i class="fas fa-user"></i>
+                                            </a>
+                                            <button class="btn btn-outline-secondary" title="Print Prescription" data-treatment-id="{{ treatment.id }}">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-notes-medical fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No treatment records found</h5>
+                        <p class="text-muted">Treatment records will appear here after completing appointments.</p>
+                        <a href="{{ url_for('doctor.appointments') }}" class="btn btn-primary">
+                            <i class="fas fa-calendar-check"></i> View Appointments
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Treatment Detail Modals -->
+{% for treatment in treatments %}
+<div class="modal fade" id="treatmentModal{{ treatment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-notes-medical"></i> Treatment Details - {{ treatment.appointment.patient.full_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Treatment Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Date:</strong> {{ treatment.treatment_date.strftime('%B %d, %Y') if treatment.treatment_date else treatment.appointment.appointment_date.strftime('%B %d, %Y') }}</li>
+                            <li><strong>Time:</strong> {{ treatment.appointment.appointment_time.strftime('%I:%M %p') if treatment.appointment.appointment_time else 'Not set' }}</li>
+                            <li><strong>Appointment ID:</strong> #{{ treatment.appointment.id }}</li>
+                            <li><strong>Status:</strong> {{ treatment.appointment.status.title() }}</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Diagnosis</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ treatment.diagnosis or 'No diagnosis recorded' }}
+                        </div>
+
+                        {% if treatment.notes %}
+                        <h6 class="fw-bold mt-3">Additional Notes</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ treatment.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold">Patient Information</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Name:</strong> {{ treatment.appointment.patient.full_name }}</li>
+                            {% if treatment.appointment.patient.date_of_birth %}
+                            <li><strong>Age:</strong> {{ current_date.year - treatment.appointment.patient.date_of_birth.year }} years</li>
+                            {% endif %}
+                            {% if treatment.appointment.patient.gender %}
+                            <li><strong>Gender:</strong> {{ treatment.appointment.patient.gender.title() }}</li>
+                            {% endif %}
+                            {% if treatment.appointment.patient.blood_group %}
+                            <li><strong>Blood Group:</strong> {{ treatment.appointment.patient.blood_group }}</li>
+                            {% endif %}
+                            <li><strong>Email:</strong> {{ treatment.appointment.patient.email }}</li>
+                            {% if treatment.appointment.patient.phone %}
+                            <li><strong>Phone:</strong> {{ treatment.appointment.patient.phone }}</li>
+                            {% endif %}
+                        </ul>
+
+                        <h6 class="fw-bold mt-3">Prescription</h6>
+                        {% if treatment.prescription %}
+                        <div class="bg-success bg-opacity-10 p-3 rounded border border-success">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-prescription text-success me-2 mt-1"></i>
+                                <div>{{ treatment.prescription }}</div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-muted">No prescription given</div>
+                        {% endif %}
+
+                        <h6 class="fw-bold mt-3">Follow-up</h6>
+                        {% if treatment.follow_up_required %}
+                        <div class="bg-warning bg-opacity-10 p-3 rounded border border-warning">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-plus text-warning me-2"></i>
+                                <div>
+                                    Follow-up required
+                                    {% if treatment.follow_up_date %}
+                                    <br><small>Scheduled for: {{ treatment.follow_up_date.strftime('%B %d, %Y') }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-success">
+                            <i class="fas fa-check-circle"></i> No follow-up required
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('doctor.patient_details', patient_id=treatment.appointment.patient_id) }}" 
+                   class="btn btn-primary">
+                    <i class="fas fa-user"></i> View Patient Profile
+                </a>
+                <button type="button" class="btn btn-outline-secondary print-prescription" data-treatment-id="{{ treatment.id }}">
+                    <i class="fas fa-print"></i> Print Prescription
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle print prescription buttons
+    document.querySelectorAll('[data-treatment-id], .print-prescription').forEach(button => {
+        button.addEventListener('click', function() {
+            const treatmentId = this.dataset.treatmentId;
+            printPrescription(treatmentId);
+        });
+    });
+});
+
+function printPrescription(treatmentId) {
+    // Create a printable prescription
+    const modal = document.querySelector(`#treatmentModal${treatmentId}`);
+    const patientName = modal.querySelector('h5').textContent.split(' - ')[1];
+    
+    // You would implement actual prescription printing here
+    alert(`Printing prescription for ${patientName}...`);
+}
+
+// Export functionality
+function exportTreatments() {
+    // Implement CSV export
+    alert('Exporting treatment records to CSV...');
+}
+</script>
+{% endblock %}

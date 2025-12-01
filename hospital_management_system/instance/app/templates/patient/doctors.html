@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% set active_page = "book_appointment" %}
+
+{% block title %}Find Doctors{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="fas fa-user-md text-primary me-2"></i>
+                    Find Doctors
+                </h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('patient.doctors') }}">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="department" class="form-label">Department</label>
+                                <select class="form-select" id="department" name="department">
+                                    <option value="">All Departments</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if selected_department == dept.id|string %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="search" class="form-label">Search Doctors</label>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       placeholder="Search by doctor name or qualification" value="{{ search_query }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search me-1"></i>
+                                        Search
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctors List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Available Doctors ({{ doctors|length }} found)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if doctors %}
+                        <div class="row">
+                            {% for doctor in doctors %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 border-left-primary">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="avatar me-3">
+                                                <div class="avatar-initial bg-primary rounded-circle d-flex align-items-center justify-content-center">
+                                                    {{ doctor.name[0].upper() if doctor.name else 'D' }}
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h5 class="card-title mb-1">Dr. {{ doctor.name or doctor.full_name }}</h5>
+                                                <small class="text-muted">{{ doctor.specialization }}</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="doctor-info">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <small class="text-muted">Department</small>
+                                                    <div class="fw-bold">{{ doctor.department.name if doctor.department else 'General' }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-2">
+                                                <div class="col-12">
+                                                    <small class="text-muted">Qualification</small>
+                                                    <div class="fw-bold">{{ doctor.qualification or 'Not specified' }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-2">
+                                                <div class="col-12">
+                                                    <small class="text-muted">Experience</small>
+                                                    <div class="fw-bold">{{ doctor.experience_years or 0 }} years</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Availability Status -->
+                                        <div class="mt-3">
+                                            {% if doctor.id in doctor_availability and doctor_availability[doctor.id] %}
+                                                <div class="alert alert-success py-2 mb-2">
+                                                    <small><i class="fas fa-check-circle"></i> Available this week</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-warning py-2 mb-2">
+                                                    <small><i class="fas fa-clock"></i> Limited availability</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mt-3 d-grid gap-2">
+                                            <a href="{{ url_for('patient.book_appointment', doctor_id=doctor.id) }}" 
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fas fa-calendar-plus me-1"></i>
+                                                Book Appointment
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-md fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No doctors found</h5>
+                            <p class="text-muted">Try adjusting your search criteria.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: .25rem solid #4e73df !important;
+}
+.avatar {
+    width: 50px;
+    height: 50px;
+}
+.avatar-initial {
+    width: 100%;
+    height: 100%;
+    font-size: 18px;
+    font-weight: 600;
+}
+.doctor-info {
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

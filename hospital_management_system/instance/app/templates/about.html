@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}About - Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2><i class="fas fa-info-circle"></i> About Our Hospital Management System</h2>
+                </div>
+                <div class="card-body p-5">
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <i class="fas fa-hospital fa-4x text-primary mb-3"></i>
+                            <h3>Modernizing Healthcare Management</h3>
+                        </div>
+                    </div>
+                    
+                    <p class="lead text-center mb-4">
+                        Our Hospital Management System is designed to streamline healthcare operations 
+                        and improve patient care through efficient digital solutions.
+                    </p>
+                    
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-users-cog fa-3x text-primary mb-3"></i>
+                                <h5>Admin Control</h5>
+                                <p>Comprehensive management of doctors, patients, and hospital operations.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-user-md fa-3x text-success mb-3"></i>
+                                <h5>Doctor Portal</h5>
+                                <p>Efficient patient management with digital records and appointment tracking.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-users fa-3x text-info mb-3"></i>
+                                <h5>Patient Access</h5>
+                                <p>Easy appointment booking and access to personal medical records.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h4>Key Features</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Role-based access control</li>
+                                <li><i class="fas fa-check text-success"></i> Appointment scheduling system</li>
+                                <li><i class="fas fa-check text-success"></i> Patient medical records</li>
+                                <li><i class="fas fa-check text-success"></i> Doctor availability management</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Treatment history tracking</li>
+                                <li><i class="fas fa-check text-success"></i> Department management</li>
+                                <li><i class="fas fa-check text-success"></i> Real-time dashboard analytics</li>
+                                <li><i class="fas fa-check text-success"></i> Responsive web design</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h4>Technology Stack</h4>
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <i class="fab fa-python fa-2x text-primary"></i>
+                            <p class="mb-0"><strong>Flask</strong></p>
+                            <small class="text-muted">Python Web Framework</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <i class="fas fa-database fa-2x text-success"></i>
+                            <p class="mb-0"><strong>SQLite</strong></p>
+                            <small class="text-muted">Database Management</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <i class="fab fa-bootstrap fa-2x text-warning"></i>
+                            <p class="mb-0"><strong>Bootstrap</strong></p>
+                            <small class="text-muted">Frontend Framework</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <i class="fas fa-code fa-2x text-info"></i>
+                            <p class="mb-0"><strong>Jinja2</strong></p>
+                            <small class="text-muted">Template Engine</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center">
+                    <p class="mb-0">
+                        <strong>Hospital Management System</strong> - Efficient Healthcare Administration
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

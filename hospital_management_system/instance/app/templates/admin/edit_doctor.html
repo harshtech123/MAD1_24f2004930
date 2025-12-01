@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Doctor - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-edit text-primary"></i> Edit Doctor Profile
+                    </h1>
+                    <p class="text-muted">Update {{ doctor.full_name }}'s information</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.doctors') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Doctors
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Doctor Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-md"></i> Update Doctor Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- Current Profile Picture -->
+                        <div class="row mb-4">
+                            <div class="col-12 text-center">
+                                <div class="current-photo-section">
+                                    {% if doctor.profile_picture %}
+                                    <img src="{{ url_for('static', filename='uploads/doctors/' + doctor.profile_picture) }}" 
+                                         alt="{{ doctor.full_name }}" class="rounded-circle border" 
+                                         style="width: 100px; height: 100px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto border"
+                                         style="width: 100px; height: 100px; font-size: 2rem;">
+                                        <i class="fas fa-user-md"></i>
+                                    </div>
+                                    {% endif %}
+                                    <p class="text-muted mt-2 mb-0">Current Profile Picture</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Personal Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Personal Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="{{ doctor.full_name }}" placeholder="Enter doctor's full name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ doctor.username }}" placeholder="Enter unique username" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ doctor.email }}" placeholder="doctor@hospital.com" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ doctor.phone or '' }}" placeholder="+91 9876543210">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Leave blank to keep current password">
+                                <div class="form-text">Only enter if you want to change the password</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="profile_picture" class="form-label">Update Profile Picture</label>
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" 
+                                       accept="image/*">
+                                <div class="form-text">Upload a new picture to replace current one</div>
+                            </div>
+                        </div>
+
+                        <!-- Professional Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Professional Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="license_number" class="form-label">License Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="license_number" name="license_number" 
+                                       value="{{ doctor.license_number }}" placeholder="Medical License Number" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="department_id" class="form-label">Department <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department_id" name="department_id" required>
+                                    <option value="">Select Department</option>
+                                    {% for department in departments %}
+                                    <option value="{{ department.id }}" 
+                                            {% if department.id == doctor.department_id %}selected{% endif %}>
+                                        {{ department.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="qualification" class="form-label">Qualification</label>
+                                <input type="text" class="form-control" id="qualification" name="qualification" 
+                                       value="{{ doctor.qualification or '' }}" placeholder="MBBS, MD, etc.">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="experience_years" class="form-label">Experience (Years)</label>
+                                <input type="number" class="form-control" id="experience_years" name="experience_years" 
+                                       value="{{ doctor.experience_years }}" placeholder="0" min="0" max="50">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="consultation_fee" class="form-label">Consultation Fee (₹)</label>
+                                <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" 
+                                       value="{{ doctor.consultation_fee }}" placeholder="500" min="0" step="0.01">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="specialization" class="form-label">Specialization</label>
+                                <input type="text" class="form-control" id="specialization" name="specialization" 
+                                       value="{{ doctor.specialization or '' }}" placeholder="e.g., Cardiologist, Pediatrician">
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Additional Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="bio" class="form-label">Bio/Description</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                          placeholder="Brief description about the doctor's expertise and background">{{ doctor.bio or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Status Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Status Settings</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if doctor.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Active Status
+                                    </label>
+                                    <div class="form-text">Doctor is active and available for appointments</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="emergency_contact" name="emergency_contact"
+                                           {% if doctor.emergency_contact %}checked{% endif %}>
+                                    <label class="form-check-label" for="emergency_contact">
+                                        Emergency Contact
+                                    </label>
+                                    <div class="form-text">Available for emergency consultations</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Information Display -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Account Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="bg-light p-3 rounded">
+                                    <small class="text-muted">Account Created:</small>
+                                    <br>
+                                    <strong>{{ doctor.created_at.strftime('%B %d, %Y at %I:%M %p') if doctor.created_at else 'Unknown' }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="bg-light p-3 rounded">
+                                    <small class="text-muted">Last Updated:</small>
+                                    <br>
+                                    <strong>{{ doctor.updated_at.strftime('%B %d, %Y at %I:%M %p') if doctor.updated_at else 'Never' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex gap-2 justify-content-between">
+                                    <div>
+                                        <!-- Status Toggle Button -->
+                                        <a href="{{ url_for('admin.toggle_doctor_status', doctor_id=doctor.id) }}" 
+                                           class="btn btn-{% if doctor.is_active %}warning{% else %}success{% endif %}"
+                                           onclick="return confirm('Are you sure you want to {% if doctor.is_active %}deactivate{% else %}activate{% endif %} {{ doctor.full_name }}?')">
+                                            <i class="fas fa-{% if doctor.is_active %}ban{% else %}check{% endif %}"></i> 
+                                            {% if doctor.is_active %}Deactivate{% else %}Activate{% endif %} Account
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('admin.doctors') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </a>
+                                        <button type="reset" class="btn btn-outline-warning">
+                                            <i class="fas fa-undo"></i> Reset
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Update Profile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+    
+    // Real-time validation
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // Username validation
+    const usernameInput = document.getElementById('username');
+    usernameInput.addEventListener('input', function() {
+        this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    });
+    
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^\d+\-\s()]/g, '');
+    });
+
+    // Profile picture preview
+    const profilePictureInput = document.getElementById('profile_picture');
+    profilePictureInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const currentPhotoSection = document.querySelector('.current-photo-section img, .current-photo-section div');
+                if (currentPhotoSection.tagName === 'IMG') {
+                    currentPhotoSection.src = e.target.result;
+                } else {
+                    // Replace the div with an img
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = '{{ doctor.full_name }}';
+                    img.className = 'rounded-circle border';
+                    img.style.cssText = 'width: 100px; height: 100px; object-fit: cover;';
+                    currentPhotoSection.parentNode.replaceChild(img, currentPhotoSection);
+                }
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+{% endblock %}

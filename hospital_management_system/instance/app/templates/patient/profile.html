@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+
+{% block title %}Update Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-edit text-primary"></i> My Profile
+                    </h1>
+                    <p class="text-muted">Update your personal information and preferences</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Profile Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Personal Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary fw-bold mb-3">Basic Information</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ patient.full_name or patient.name }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ patient.email }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ patient.phone }}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                           value="{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="male" {{ 'selected' if patient.gender == 'male' }}>Male</option>
+                                        <option value="female" {{ 'selected' if patient.gender == 'female' }}>Female</option>
+                                        <option value="other" {{ 'selected' if patient.gender == 'other' }}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact & Medical Information -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary fw-bold mb-3">Contact & Medical Information</h6>
+                                
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3" 
+                                              placeholder="Enter your full address">{{ patient.address or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="emergency_contact" class="form-label">Emergency Contact</label>
+                                    <input type="tel" class="form-control" id="emergency_contact" name="emergency_contact" 
+                                           value="{{ patient.emergency_contact or '' }}" 
+                                           placeholder="Emergency contact number">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="blood_group" class="form-label">Blood Group</label>
+                                    <select class="form-select" id="blood_group" name="blood_group">
+                                        <option value="">Select Blood Group</option>
+                                        <option value="A+" {{ 'selected' if patient.blood_group == 'A+' }}>A+</option>
+                                        <option value="A-" {{ 'selected' if patient.blood_group == 'A-' }}>A-</option>
+                                        <option value="B+" {{ 'selected' if patient.blood_group == 'B+' }}>B+</option>
+                                        <option value="B-" {{ 'selected' if patient.blood_group == 'B-' }}>B-</option>
+                                        <option value="AB+" {{ 'selected' if patient.blood_group == 'AB+' }}>AB+</option>
+                                        <option value="AB-" {{ 'selected' if patient.blood_group == 'AB-' }}>AB-</option>
+                                        <option value="O+" {{ 'selected' if patient.blood_group == 'O+' }}>O+</option>
+                                        <option value="O-" {{ 'selected' if patient.blood_group == 'O-' }}>O-</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="allergies" class="form-label">Allergies</label>
+                                    <textarea class="form-control" id="allergies" name="allergies" rows="3" 
+                                              placeholder="List any allergies or medical conditions">{{ patient.allergies or '' }}</textarea>
+                                    <div class="form-text">Please list any known allergies or medical conditions</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Password Change Section -->
+                        <hr class="my-4">
+                        <h6 class="text-primary fw-bold mb-3">Change Password (Optional)</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" 
+                                           placeholder="Enter new password (leave blank to keep current)">
+                                    <div class="form-text">Minimum 6 characters required</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                           placeholder="Confirm new password">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Summary -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card"></i> Profile Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="avatar-lg mx-auto mb-3">
+                            <div class="avatar-initial bg-primary rounded-circle d-flex align-items-center justify-content-center">
+                                <span class="h3 text-white mb-0">{{ (patient.full_name or patient.name)[0].upper() }}</span>
+                            </div>
+                        </div>
+                        <h5 class="mb-1">{{ patient.full_name or patient.name }}</h5>
+                        <p class="text-muted mb-0">Patient ID: {{ patient.id }}</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Email:</strong><br>
+                            <small>{{ patient.email or 'Not provided' }}</small>
+                        </li>
+                        <li class="mb-2">
+                            <strong>Phone:</strong><br>
+                            <small>{{ patient.phone or 'Not provided' }}</small>
+                        </li>
+                        {% if patient.date_of_birth %}
+                        <li class="mb-2">
+                            <strong>Age:</strong><br>
+                            <small>{{ current_date.year - patient.date_of_birth.year }} years old</small>
+                        </li>
+                        {% endif %}
+                        {% if patient.blood_group %}
+                        <li class="mb-2">
+                            <strong>Blood Group:</strong><br>
+                            <span class="badge bg-danger">{{ patient.blood_group }}</span>
+                        </li>
+                        {% endif %}
+                        {% if patient.emergency_contact %}
+                        <li class="mb-2">
+                            <strong>Emergency Contact:</strong><br>
+                            <small>{{ patient.emergency_contact }}</small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line"></i> Quick Stats
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">{{ total_appointments or 0 }}</h4>
+                                <p class="text-muted mb-0 small">Total Appointments</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success mb-1">{{ total_treatments or 0 }}</h4>
+                            <p class="text-muted mb-0 small">Treatments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const newPasswordInput = document.getElementById('new_password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    
+    // Password confirmation validation
+    function validatePasswords() {
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        if (newPassword && confirmPassword) {
+            if (newPassword !== confirmPassword) {
+                confirmPasswordInput.setCustomValidity('Passwords do not match');
+            } else {
+                confirmPasswordInput.setCustomValidity('');
+            }
+        }
+    }
+    
+    newPasswordInput.addEventListener('input', validatePasswords);
+    confirmPasswordInput.addEventListener('input', validatePasswords);
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const newPassword = newPasswordInput.value;
+        
+        if (newPassword && newPassword.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long');
+            newPasswordInput.focus();
+            return false;
+        }
+        
+        validatePasswords();
+        
+        if (!confirmPasswordInput.checkValidity()) {
+            e.preventDefault();
+            alert('Passwords do not match');
+            confirmPasswordInput.focus();
+            return false;
+        }
+        
+        return confirm('Are you sure you want to update your profile?');
+    });
+});
+</script>
+
+<style>
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+}
+
+.avatar-initial {
+    width: 100%;
+    height: 100%;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}

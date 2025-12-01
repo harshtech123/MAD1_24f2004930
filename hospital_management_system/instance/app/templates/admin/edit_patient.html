@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Patient - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-edit text-primary"></i> Edit Patient Information
+                    </h1>
+                    <p class="text-muted">Update {{ patient.full_name }}'s profile information</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.patients') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Patient Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user"></i> Update Patient Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Personal Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Personal Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" 
+                                       value="{{ patient.full_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ patient.email }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ patient.phone or '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="male" {% if patient.gender == 'male' %}selected{% endif %}>Male</option>
+                                    <option value="female" {% if patient.gender == 'female' %}selected{% endif %}>Female</option>
+                                    <option value="other" {% if patient.gender == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="blood_group" class="form-label">Blood Group</label>
+                                <select class="form-select" id="blood_group" name="blood_group">
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+" {% if patient.blood_group == 'A+' %}selected{% endif %}>A+</option>
+                                    <option value="A-" {% if patient.blood_group == 'A-' %}selected{% endif %}>A-</option>
+                                    <option value="B+" {% if patient.blood_group == 'B+' %}selected{% endif %}>B+</option>
+                                    <option value="B-" {% if patient.blood_group == 'B-' %}selected{% endif %}>B-</option>
+                                    <option value="AB+" {% if patient.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+                                    <option value="AB-" {% if patient.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+                                    <option value="O+" {% if patient.blood_group == 'O+' %}selected{% endif %}>O+</option>
+                                    <option value="O-" {% if patient.blood_group == 'O-' %}selected{% endif %}>O-</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Contact Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3">{{ patient.address or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="emergency_contact" class="form-label">Emergency Contact</label>
+                                <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" 
+                                       value="{{ patient.emergency_contact or '' }}" 
+                                       placeholder="Name and phone number of emergency contact">
+                            </div>
+                        </div>
+
+                        <!-- Medical Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Medical Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="allergies" class="form-label">Allergies</label>
+                                <textarea class="form-control" id="allergies" name="allergies" rows="2" 
+                                          placeholder="List any known allergies">{{ patient.allergies or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="medical_history" class="form-label">Medical History</label>
+                                <textarea class="form-control" id="medical_history" name="medical_history" rows="3" 
+                                          placeholder="Brief medical history and existing conditions">{{ patient.medical_history or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Security Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Security Settings</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label for="password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Leave blank to keep current password">
+                                <div class="form-text">Only enter if you want to change the patient's password</div>
+                            </div>
+                        </div>
+
+                        <!-- Account Information Display -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Account Information</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="bg-light p-3 rounded">
+                                    <small class="text-muted">Username:</small>
+                                    <br>
+                                    <strong>@{{ patient.username }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="bg-light p-3 rounded">
+                                    <small class="text-muted">Account Status:</small>
+                                    <br>
+                                    {% if patient.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Blacklisted</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="bg-light p-3 rounded">
+                                    <small class="text-muted">Registered:</small>
+                                    <br>
+                                    <strong>{{ patient.created_at.strftime('%B %d, %Y') if patient.created_at else 'Unknown' }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patient Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-primary border-bottom pb-2">Patient Statistics</h6>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-3 text-center">
+                                <div class="bg-primary text-white p-3 rounded">
+                                    <h4>{{ patient.appointments|length }}</h4>
+                                    <small>Total Appointments</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="bg-success text-white p-3 rounded">
+                                    <h4>{{ patient.appointments|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+                                    <small>Completed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="bg-warning text-white p-3 rounded">
+                                    <h4>{{ patient.appointments|selectattr('status', 'equalto', 'booked')|list|length }}</h4>
+                                    <small>Upcoming</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="bg-danger text-white p-3 rounded">
+                                    <h4>{{ patient.appointments|selectattr('status', 'equalto', 'cancelled')|list|length }}</h4>
+                                    <small>Cancelled</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <!-- Status Toggle Button -->
+                                        <a href="{{ url_for('admin.toggle_patient_status', patient_id=patient.id) }}" 
+                                           class="btn btn-{% if patient.is_active %}warning{% else %}success{% endif %}"
+                                           onclick="return confirm('Are you sure you want to {% if patient.is_active %}blacklist{% else %}activate{% endif %} {{ patient.full_name }}?')">
+                                            <i class="fas fa-{% if patient.is_active %}ban{% else %}check{% endif %}"></i> 
+                                            {% if patient.is_active %}Blacklist{% else %}Activate{% endif %} Patient
+                                        </a>
+                                        
+                                        <a href="{{ url_for('admin.appointments') }}?patient_id={{ patient.id }}" class="btn btn-info">
+                                            <i class="fas fa-calendar-check"></i> View Appointments
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ url_for('admin.patients') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </a>
+                                        <button type="reset" class="btn btn-outline-warning">
+                                            <i class="fas fa-undo"></i> Reset
+                                        </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Update Patient
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const inputs = form.querySelectorAll('input[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        }
+    });
+    
+    // Real-time validation
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^\d+\-\s()]/g, '');
+    });
+});
+</script>
+{% endblock %}
